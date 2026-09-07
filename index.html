@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fußball-Mathe-Trainer</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fußball-Mathe">
+<meta name="theme-color" content="#0f5132">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<style>
+:root{
+  --green:#146c43;
+  --green-dark:#0f5132;
+  --green-deep:#092f20;
+  --paper:rgba(255,255,255,.94);
+  --text:#17311f;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  margin:0;
+  color:var(--text);
+  min-height:100vh;
+  background:#173c2b;
+  padding-left:max(12px,env(safe-area-inset-left));
+  padding-right:max(12px,env(safe-area-inset-right));
+  padding-bottom:max(12px,env(safe-area-inset-bottom));
+  position:relative;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:url("bg.jpg") center/cover no-repeat;
+  opacity:.32;
+  z-index:-2;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(15,55,38,.18);
+  z-index:-1;
+  pointer-events:none;
+}
+@media (display-mode:standalone){
+  body{padding-top:max(10px,env(safe-area-inset-top))}
+}
+header{
+  background:rgba(15,81,50,.92);
+  color:#fff;
+  padding:18px;
+  text-align:center;
+  border-radius:0 0 20px 20px;
+  backdrop-filter:blur(6px);
+}
+header h1{margin:.15rem 0 .4rem}
+header p{margin:0}
+main{max-width:1050px;margin:auto;padding:18px 6px}
+.box{
+  background:var(--paper);
+  border-radius:18px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:0 10px 30px #0002;
+  backdrop-filter:blur(6px);
+}
+.row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+button,input{font:inherit;font-size:16px}
+button{
+  background:var(--green);
+  color:#fff;
+  border:0;
+  border-radius:12px;
+  padding:12px 16px;
+  font-weight:800;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+button:disabled{opacity:.45}
+button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
+.tabs{display:flex;gap:8px;justify-content:center;margin-bottom:18px}
+.hidden{display:none!important}
+
+.control-title{text-align:center;font-weight:900;margin:8px 0}
+.choice-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.choice-btn{min-width:110px;background:#2a7955}
+.duration-btn{min-width:105px;background:#526f60}
+.choice-btn.active,.duration-btn.active{background:#092f20}
+
+/* Punkt vor Strich und Mix zusätzlich golden hervorheben */
+.choice-btn[data-op="punkt"],
+.choice-btn[data-op="mix"]{
+  border:3px solid #d4af37;
+  box-shadow:0 0 0 1px rgba(255,235,150,.45),0 3px 10px rgba(120,85,0,.22);
+}
+
+.choice-btn[data-op="punkt"].active,
+.choice-btn[data-op="mix"].active{
+  border-color:#ffd966;
+  box-shadow:0 0 0 2px rgba(255,217,102,.38),0 0 12px rgba(212,175,55,.45);
+}
+
+.status-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.status-card{
+  background:#f5fbf7;
+  border:1px solid #cfe2d5;
+  border-radius:12px;
+  padding:10px;
+  text-align:center;
+}
+.status-card b{display:block;font-size:1.15rem}
+
+.progress{height:12px;background:#dbe8de;border-radius:20px;overflow:hidden;margin-top:10px}
+.progress div{height:100%;background:#1f8f58;width:0;transition:width .25s}
+.task{text-align:center;font-size:clamp(42px,8vw,64px);font-weight:900;margin:25px}
+#answer{
+  width:160px;
+  text-align:center;
+  padding:14px;
+  border-radius:12px;
+  border:2px solid #a9b9ad;
+  background:#fff;
+}
+.msg{text-align:center;font-weight:800;min-height:26px}
+.ipad-tip{
+  max-width:1050px;
+  margin:14px auto 0;
+  padding:12px 14px;
+  border-radius:14px;
+  background:#ffffffdd;
+  border:1px solid #cfe2d5;
+  color:#3e5547;
+  line-height:1.45;
+  font-size:.92rem;
+}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.album-category{
+  margin:0 0 20px;
+  border-radius:18px;
+  background:rgba(255,255,255,.10);
+  overflow:hidden;
+  box-shadow:0 8px 20px #0002;
+}
+.album-category-title{
+  color:white;
+  background:linear-gradient(135deg,rgba(9,47,32,.98),rgba(24,92,61,.95));
+  padding:16px 18px;
+  cursor:pointer;
+  list-style:none;
+  font-weight:900;
+  font-size:1.18rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  -webkit-tap-highlight-color:transparent;
+}
+.album-category-title::-webkit-details-marker{display:none}
+.album-category-title::after{
+  content:"▸";
+  transition:transform .2s ease;
+}
+.album-category[open]>.album-category-title::after{transform:rotate(90deg)}
+.album-category-body{padding:14px}
+.album-category-count{font-size:.86rem;opacity:.9;margin-left:auto}
+.club-section{
+  margin-bottom:18px;
+  background:rgba(255,255,255,.08);
+  border-radius:14px;
+}
+.club-title{
+  color:white;
+  background:rgba(9,47,32,.88);
+  border-radius:14px;
+  padding:12px 14px;
+  margin:0;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  cursor:pointer;
+  list-style:none;
+  font-weight:900;
+  -webkit-tap-highlight-color:transparent;
+}
+.club-title::-webkit-details-marker{display:none}
+.club-title::after{
+  content:"▸";
+  font-size:1.15rem;
+  transition:transform .2s ease;
+}
+.club-section[open]>.club-title::after{transform:rotate(90deg)}
+.club-title-main{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  width:100%;
+}
+.club-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:16px;
+  padding:14px 0 6px;
+}
+.club-empty-note{
+  color:#eef7f0;
+  text-align:center;
+  padding:14px;
+  font-weight:800;
+}
+
+.card{
+  border-radius:22px;
+  padding:14px;
+  background:linear-gradient(145deg,#dfb73b,#f7e8a0,#caa42f);
+  box-shadow:0 12px 26px #0003;
+  min-height:420px;
+}
+.card.Legende{
+  color:white;
+  border:1px solid rgba(224,196,255,.62);
+  background:linear-gradient(135deg,#160d35 0%,#48216d 30%,#8652a8 56%,#35205f 78%,#160d35 100%);
+  box-shadow:0 12px 30px rgba(0,0,0,.42),0 0 18px rgba(232,200,88,.20),inset 0 0 24px rgba(255,255,255,.10);
+}
+
+/* Legenden: Hologramm + dezenter Glitzereffekt */
+.card.Legende::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-45%;
+  width:auto;
+  left:-45%;
+  pointer-events:none;
+  background:linear-gradient(112deg,
+    transparent 31%,
+    rgba(113,220,255,.10) 39%,
+    rgba(255,255,255,.46) 46%,
+    rgba(255,190,246,.24) 51%,
+    rgba(255,220,126,.15) 56%,
+    transparent 66%);
+  opacity:.86;
+  animation:legendeHolo 4.8s ease-in-out infinite;
+}
+
+.card.Legende::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    radial-gradient(circle at 14% 18%,rgba(255,255,255,.95) 0 1px,transparent 2px),
+    radial-gradient(circle at 72% 13%,rgba(255,225,151,.95) 0 1.2px,transparent 2.4px),
+    radial-gradient(circle at 88% 47%,rgba(235,207,255,.95) 0 1px,transparent 2.2px),
+    radial-gradient(circle at 27% 62%,rgba(255,255,255,.90) 0 1.1px,transparent 2.3px),
+    radial-gradient(circle at 61% 79%,rgba(255,231,167,.95) 0 1px,transparent 2.2px),
+    radial-gradient(circle at 39% 35%,rgba(222,190,255,.90) 0 .8px,transparent 2px);
+  animation:legendeComboSparkle 2.6s ease-in-out infinite alternate;
+}
+
+@keyframes legendeHolo{
+  0%,20%{transform:translateX(-28%)}
+  70%,100%{transform:translateX(34%)}
+}
+@keyframes legendeComboSparkle{
+  0%{opacity:.12;filter:brightness(.85)}
+  30%{opacity:.72;filter:brightness(1.25)}
+  58%{opacity:.25;filter:brightness(.95)}
+  82%{opacity:.88;filter:brightness(1.4)}
+  100%{opacity:.42;filter:brightness(1.05)}
+}
+.card.Silber{background:linear-gradient(145deg,#b9c3c9,#f5f5f5,#9aa5ab)}
+.card.Bronze{background:linear-gradient(145deg,#a96536,#d6a16e,#8e512e);color:#fff}
+.top{display:flex;justify-content:space-between;align-items:flex-start;font-weight:900;font-size:28px}
+.rating-block{line-height:1}
+.card .top-right{display:flex;align-items:center;gap:7px}
+.card .club-badge{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.card .club-badge[hidden]{display:none}
+.pos{font-size:20px;padding-top:3px}
+.photo{
+  height:210px;
+  border-radius:16px;
+  background:#ffffff44;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  margin:8px 0;
+  font-size:38px;
+  font-weight:900;
+}
+.photo img{width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.name{text-align:center;font-weight:900;font-size:19px}
+.team{text-align:center;font-size:14px;min-height:20px;margin-top:3px}
+.rarity{text-align:center;font-weight:800;margin:6px 0 8px}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px 8px;
+  border-top:1px solid #0002;
+  padding-top:8px;
+  font-size:12px;
+  font-weight:800;
+}
+.stat{display:flex;justify-content:space-between;gap:5px}
+.locked{
+  height:420px;
+  border:2px dashed #d9e0da;
+  border-radius:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:#d9e0da;
+  background:rgba(9,47,32,.65);
+  padding:14px;
+}
+
+/* Noch nicht gesammelte Karten: echte Karte ausgegraut anzeigen */
+.locked-card-wrap{
+  position:relative;
+  border-radius:22px;
+  overflow:hidden;
+}
+
+.locked-card-wrap .card{
+  filter:grayscale(1);
+  opacity:.42;
+}
+
+.locked-card-wrap::after{
+  content:"🔒 Noch nicht gesammelt";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  text-align:center;
+  font-weight:900;
+  font-size:1.05rem;
+  color:#fff;
+  background:rgba(9,47,32,.38);
+  text-shadow:0 2px 5px #0008;
+  pointer-events:none;
+}
+
+.reward-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(3,15,10,.94);
+  z-index:999;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+.reward-overlay[hidden]{display:none}
+.reward-wrap{text-align:center;max-width:360px;width:100%}
+.reward-title{color:white;font-size:1.55rem;font-weight:900;margin-bottom:14px}
+#rewardCard .card{animation:cardin .8s cubic-bezier(.2,.8,.2,1) both}
+.close-reveal{margin-top:16px;font-size:1.05rem;padding:14px 20px}
+@keyframes cardin{
+  from{transform:rotateY(100deg) scale(.5);opacity:0}
+  to{transform:none;opacity:1}
+}
+.session-end{text-align:center}
+.session-end h2{font-size:2rem;margin-bottom:8px}
+
+.rest-inputs{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.rest-inputs input{
+  width:110px;
+  text-align:center;
+  padding:14px;
+  border-radius:12px;
+  border:2px solid #a9b9ad;
+  background:#fff;
+}
+.rest-label{
+  font-weight:900;
+  font-size:1.15rem;
+}
+.end-praise{
+  font-size:1.4rem;
+  font-weight:900;
+}
+.reward-text{
+  text-align:center;
+  font-size:1.2rem;
+  font-weight:900;
+  min-height:30px;
+  margin-top:8px;
+}
+
+.meme67-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1200;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(4px);
+}
+.meme67-overlay[hidden]{display:none}
+.meme67-card{
+  width:min(360px,92vw);
+  border-radius:28px;
+  background:linear-gradient(145deg,#fff,#eaf8ef);
+  border:5px solid #0f5132;
+  box-shadow:0 20px 70px #0008;
+  text-align:center;
+  padding:22px 18px 18px;
+  animation:meme67pop .48s cubic-bezier(.2,.9,.25,1.2) both;
+}
+.meme67-number{
+  font-size:clamp(88px,28vw,150px);
+  line-height:.9;
+  font-weight:1000;
+  letter-spacing:-8px;
+  color:#0f5132;
+  text-shadow:4px 4px 0 #f2cf45;
+}
+.meme67-text{
+  margin-top:10px;
+  font-size:1.45rem;
+  font-weight:1000;
+}
+.meme67-sub{
+  margin-top:5px;
+  font-size:.95rem;
+  font-weight:800;
+  opacity:.78;
+}
+@keyframes meme67pop{
+  from{transform:scale(.35) rotate(-8deg);opacity:0}
+  65%{transform:scale(1.08) rotate(3deg);opacity:1}
+  to{transform:scale(1) rotate(0)}
+}
+
+body.meme67-shake{
+  overflow-x:hidden;
+}
+body.meme67-shake > *:not(.meme67-overlay){
+  animation:meme67screenShake .12s infinite alternate ease-in-out;
+  transform-origin:center center;
+}
+body.meme67-shake::after{
+  animation:meme67flash .16s infinite alternate;
+}
+body.meme67-shake header,
+body.meme67-shake main,
+body.meme67-shake .ipad-tip{
+  filter:saturate(1.8) contrast(1.15);
+}
+
+@keyframes meme67screenShake{
+  0%   {transform:translate(-5px,3px) rotate(-.7deg) scale(1.004)}
+  20%  {transform:translate(6px,-2px) rotate(.8deg) scale(1.006)}
+  40%  {transform:translate(-3px,-5px) rotate(-.4deg) scale(1.003)}
+  60%  {transform:translate(5px,4px) rotate(.6deg) scale(1.007)}
+  80%  {transform:translate(-6px,1px) rotate(-.8deg) scale(1.004)}
+  100% {transform:translate(4px,-4px) rotate(.5deg) scale(1.006)}
+}
+
+@keyframes meme67flash{
+  0%{background:rgba(255,255,255,.02)}
+  50%{background:rgba(242,207,69,.18)}
+  100%{background:rgba(15,81,50,.16)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  body.meme67-shake > *:not(.meme67-overlay){
+    animation:none;
+  }
+  body.meme67-shake::after{
+    animation:none;
+  }
+}
+
+.cancel-training{
+  position:fixed;
+  top:max(14px,env(safe-area-inset-top));
+  right:max(14px,env(safe-area-inset-right));
+  z-index:1400;
+  width:54px;
+  height:54px;
+  padding:0;
+  border-radius:50%;
+  background:#b42318;
+  color:#fff;
+  font-size:30px;
+  line-height:1;
+  box-shadow:0 8px 24px #0005;
+}
+.cancel-training:hover{background:#8f1c13}
+.end-actions{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+
+.source-note{
+  max-width:1050px;
+  margin:4px auto 18px;
+  padding:10px 14px;
+  text-align:center;
+  font-size:12px;
+  line-height:1.55;
+  color:rgba(255,255,255,.78);
+}
+.source-note a{
+  color:inherit;
+  text-decoration:underline;
+}
+
+</style>
+</head>
+
+
+<header>
+  <h1>⚽ Fußball-Mathe-Trainer</h1>
+  <p>Aufgaben lösen → Karten sammeln → Album füllen</p>
+</header>
+
+<button type="button" id="cancelTraining" class="cancel-training hidden" aria-label="Übung abbrechen" title="Übung abbrechen">✕</button>
+
+<main>
+  <div class="tabs">
+    <button id="trainerTab" class="active">Trainer</button>
+    <button id="albumTab">Sammelalbum</button>
+  </div>
+
+  <section id="trainer">
+    <div class="box" id="trainerBox">
+      <div class="control-title">Rechenart auswählen</div>
+      <div class="choice-row" id="opButtons">
+        <button type="button" class="choice-btn active" data-op="mul">Mal</button>
+        <button type="button" class="choice-btn" data-op="add">Plus</button>
+        <button type="button" class="choice-btn" data-op="sub">Minus</button>
+        <button type="button" class="choice-btn" data-op="div">Geteilt</button>
+        <button type="button" class="choice-btn" data-op="rest">Rest</button>
+		<button type="button" class="choice-btn" data-op="punkt">Punkt vor Strich</button>
+        <button type="button" class="choice-btn" data-op="mix">Mix</button>
+      </div>
+
+      <div class="control-title">Übungsdauer auswählen</div>
+      <div class="choice-row" id="durationButtons">
+        <button type="button" class="duration-btn active" data-minutes="5">5 Minuten</button>
+        <button type="button" class="duration-btn" data-minutes="7">7 Minuten</button>
+        <button type="button" class="duration-btn" data-minutes="10">10 Minuten</button>
+        <button type="button" class="duration-btn" data-minutes="15">15 Minuten</button>
+      </div>
+
+      <div class="row">
+        <button type="button" id="startSession">▶ Training starten</button>
+      </div>
+
+      <div id="activeTraining" class="hidden">
+        <div class="status-row">
+          <div class="status-card">Zeit<b id="timeLeft">05:00</b></div>
+          <div class="status-card">Richtig<b id="totalCorrect">0</b></div>
+          <div class="status-card">Karten<b id="cardsEarned">0</b></div>
+        </div>
+        <div class="status-card" style="margin-top:10px">Bis zur nächsten Karte<b><span id="rewardProgress">0</span>/10</b></div>
+        <div class="progress"><div id="bar"></div></div>
+
+        <div class="task" id="task"></div>
+        <form class="row" id="form">
+          <div id="normalAnswerWrap">
+            <input id="answer" type="number" inputmode="numeric" autocomplete="off">
+          </div>
+          <div id="restAnswerWrap" class="hidden rest-inputs">
+            <input id="restQuotient" type="number" inputmode="numeric" autocomplete="off" aria-label="Ergebnis">
+            <span class="rest-label">Rest</span>
+            <input id="restRemainder" type="number" inputmode="numeric" autocomplete="off" aria-label="Rest">
+          </div>
+          <button type="submit">Prüfen</button>
+        </form>
+        <p class="msg" id="msg"></p>
+        <div class="reward-text" id="rewardText"></div>
+      </div>
+
+      <div id="sessionEnd" class="session-end hidden">
+        <h2 id="sessionEndTitle">⏱️ Übungszeit beendet</h2>
+        <p>Du hast <strong id="endCorrect">0</strong> Aufgaben richtig gelöst.</p>
+        <p>Du hast <strong id="endCards">0</strong> Karten verdient.</p>
+        <p>Trainiert: <strong id="endTime">00:00</strong></p>
+        <p class="end-praise">🌟 Super gemacht!</p>
+        <div class="end-actions">
+          <button type="button" id="restartSession">🔁 Neu starten</button>
+          <button type="button" id="backHome">🏠 Zum Startbildschirm</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="album" class="hidden">
+    <div class="box">
+      <h2>Dein Sammelalbum</h2>
+      <p><b id="ownedCount">0</b> von <b id="allCount">0</b> Karten gesammelt.</p>
+    </div>
+    <div id="albumClubs"></div>
+  </section>
+</main>
+
+<footer class="source-note">
+  Echte Spielerbilder:
+  <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer">TheSportsDB</a><br>
+  © Bild-/Artwork-Rechte bei den jeweiligen Rechteinhabern. TheSportsDB wird als Bildquelle genannt.
+</footer>
+
+
+<div id="rewardOverlay" class="reward-overlay" hidden>
+  <div class="reward-wrap">
+    <div class="reward-title" id="rewardTitle">✨ Neue Karte! ✨</div>
+    <div id="rewardCard"></div>
+    <button id="closeReward" class="close-reveal">📖 Ins Sammelalbum</button>
+  </div>
+</div>
+
+<script>
+let players=[];
+let currentAnswer=0;
+let currentRemainder=0;
+let currentTaskType='mul';
+let attemptsForTask=0;
+let currentOp=localStorage.getItem('fm_op')||'mul';
+let selectedMinutes=Number(localStorage.getItem('fm_minutes')||5);
+let totalCorrect=0;
+let rewardCounter=0;
+let cardsEarned=0;
+let owned=JSON.parse(localStorage.getItem('fm_owned')||'[]');
+let timerId=null;
+let secondsLeft=0;
+let trainingActive=false;
+let rewardOpen=false;
+let lastTaskKey='';
+
+const $=id=>document.getElementById(id);
+const API='https://www.thesportsdb.com/api/v1/json/123/searchplayers.php?p=';
+
+function r(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function initials(name){return name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}
+
+async function start(){
+  players=await (await fetch('players.json')).json();
+  $('allCount').textContent=players.length;
+  syncSelectionButtons();
+  renderAlbum();
+  updateUi();
+}
+
+function syncSelectionButtons(){
+  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.toggle('active',b.dataset.op===currentOp));
+  document.querySelectorAll('.duration-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.minutes)===selectedMinutes));
+}
+
+document.querySelectorAll('.choice-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(trainingActive)return;
+    currentOp=btn.dataset.op;
+    localStorage.setItem('fm_op',currentOp);
+    syncSelectionButtons();
+  });
+});
+
+document.querySelectorAll('.duration-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(trainingActive)return;
+    selectedMinutes=Number(btn.dataset.minutes);
+    localStorage.setItem('fm_minutes',selectedMinutes);
+    syncSelectionButtons();
+  });
+});
+
+function pickTaskType(){
+  if(currentOp!=='mix') return currentOp;
+  const types=['mul','add','sub','div','rest','punkt'];
+  return types[r(0,types.length-1)];
+}
+
+function setAnswerMode(type){
+  const isRest=type==='rest';
+  $('normalAnswerWrap').classList.toggle('hidden',isRest);
+  $('restAnswerWrap').classList.toggle('hidden',!isRest);
+}
+
+function focusAnswerField(){
+  if(!trainingActive || rewardOpen)return;
+  const el=currentTaskType==='rest' ? $('restQuotient') : $('answer');
+  setTimeout(()=>{
+    try{el.focus({preventScroll:true})}catch(e){el.focus()}
+  },50);
+}
+
+function newTask(){
+  if(!trainingActive || rewardOpen)return;
+
+  attemptsForTask=0;
+  $('rewardText').textContent='';
+
+  let a,b,c,symbol='',taskKey='',taskText='',tries=0;
+
+    do{
+    currentTaskType=pickTaskType();
+    setAnswerMode(currentTaskType);
+
+    if(currentTaskType==='mul'){
+      a=r(1,10); b=r(1,10);
+      currentAnswer=a*b; currentRemainder=0; symbol='×';
+      taskText=`${a} ${symbol} ${b} = ?`;
+      taskKey=`${currentTaskType}|${a}|${b}`;
+    }
+
+    if(currentTaskType==='add'){
+      a=r(0,100); b=r(0,100-a);
+      currentAnswer=a+b; currentRemainder=0; symbol='+';
+      taskText=`${a} ${symbol} ${b} = ?`;
+      taskKey=`${currentTaskType}|${a}|${b}`;
+    }
+
+    if(currentTaskType==='sub'){
+      a=r(0,100); b=r(0,a);
+      currentAnswer=a-b; currentRemainder=0; symbol='−';
+      taskText=`${a} ${symbol} ${b} = ?`;
+      taskKey=`${currentTaskType}|${a}|${b}`;
+    }
+
+    if(currentTaskType==='div'){
+      currentAnswer=r(1,10);
+      b=r(1,10);
+      a=currentAnswer*b;
+      currentRemainder=0;
+      symbol='÷';
+      taskText=`${a} ${symbol} ${b} = ?`;
+      taskKey=`${currentTaskType}|${a}|${b}`;
+    }
+
+    if(currentTaskType==='rest'){
+      b=r(2,10);
+      currentAnswer=r(1,10);
+      currentRemainder=r(1,b-1);
+      a=currentAnswer*b+currentRemainder;
+      symbol='÷';
+      taskText=`${a} ${symbol} ${b} = ?`;
+      taskKey=`${currentTaskType}|${a}|${b}`;
+    }
+
+    if(currentTaskType==='punkt'){
+      // Punkt vor Strich: Multiplikation ODER exakte Division aus dem kleinen 1x1.
+      // Das Endergebnis bleibt immer im Zahlenraum von 0 bis 100.
+      let valid=false;
+      while(!valid){
+        a=r(0,100);
+        const useDivision=Math.random()<0.5;
+        const plus=Math.random()<0.5;
+        const pointFirst=Math.random()<0.5;
+        let pointValue=0;
+        let pointText='';
+
+        if(useDivision){
+          // Beispiel: 48 ÷ 6 = 8. Dividend und Divisor stammen aus dem kleinen 1x1.
+          const quotient=r(1,10);
+          const divisor=r(1,10);
+          const dividend=quotient*divisor;
+          pointValue=quotient;
+          pointText=`${dividend} ÷ ${divisor}`;
+        }else{
+          b=r(1,10);
+          c=r(1,10);
+          pointValue=b*c;
+          pointText=`${b} × ${c}`;
+        }
+
+        if(plus){
+          currentAnswer=a+pointValue;
+          if(currentAnswer<=100){
+            taskText=pointFirst
+              ? `${pointText} + ${a} = ?`
+              : `${a} + ${pointText} = ?`;
+            valid=true;
+          }
+        }else if(pointFirst){
+          currentAnswer=pointValue-a;
+          if(currentAnswer>=0 && currentAnswer<=100){
+            taskText=`${pointText} − ${a} = ?`;
+            valid=true;
+          }
+        }else{
+          currentAnswer=a-pointValue;
+          if(currentAnswer>=0 && currentAnswer<=100){
+            taskText=`${a} − ${pointText} = ?`;
+            valid=true;
+          }
+        }
+      }
+      currentRemainder=0;
+      taskKey=`${currentTaskType}|${taskText}`;
+    }
+
+    tries++;
+  }while(taskKey===lastTaskKey && tries<50);
+
+  lastTaskKey=taskKey;
+  $('task').textContent=taskText;
+
+  $('answer').value='';
+  $('restQuotient').value='';
+  $('restRemainder').value='';
+
+  focusAnswerField();
+}
+
+function formatTime(sec){
+  const m=Math.floor(sec/60);
+  const s=sec%60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function rewardTarget(){
+  return (currentOp==='mix' || currentOp==='punkt') ? 5 : 10;
+}
+
+function updateUi(){
+  $('timeLeft').textContent=formatTime(Math.max(0,secondsLeft));
+  $('totalCorrect').textContent=totalCorrect;
+  $('rewardProgress').textContent=rewardCounter;
+  $('rewardGoal').textContent=rewardTarget();
+  $('cardsEarned').textContent=cardsEarned;
+  $('bar').style.width=(rewardCounter/rewardTarget()*100)+'%';
+  $('ownedCount').textContent=owned.length;
+}
+
+function startTraining(){
+  clearInterval(timerId);
+  totalCorrect=0;
+  rewardCounter=0;
+  cardsEarned=0;
+  attemptsForTask=0;
+  secondsLeft=selectedMinutes*60;
+  trainingActive=true;
+  rewardOpen=false;
+  $('sessionEnd').classList.add('hidden');
+  $('activeTraining').classList.remove('hidden');
+  $('cancelTraining').classList.remove('hidden');
+  $('sessionEndTitle').textContent='⏱️ Übungszeit beendet';
+  $('startSession').textContent='Training läuft …';
+  $('startSession').disabled=true;
+  document.querySelectorAll('.choice-btn,.duration-btn').forEach(b=>b.disabled=true);
+  $('msg').textContent='';
+  updateUi();
+  newTask();
+  timerId=setInterval(()=>{
+    if(!rewardOpen){
+      secondsLeft--;
+      updateUi();
+      if(secondsLeft<=0)finishTraining();
+    }
+  },1000);
+}
+
+function finishTraining(reason='time'){
+  if(!trainingActive && reason!=='cancel')return;
+
+  trainingActive=false;
+  clearInterval(timerId);
+  timerId=null;
+
+  $('rewardOverlay').hidden=true;
+  rewardOpen=false;
+
+  $('cancelTraining').classList.add('hidden');
+  $('activeTraining').classList.add('hidden');
+  $('sessionEnd').classList.remove('hidden');
+
+  $('sessionEndTitle').textContent=
+    reason==='cancel' ? '⏹️ Übung beendet' : '⏱️ Übungszeit beendet';
+
+  $('endCorrect').textContent=totalCorrect;
+  $('endCards').textContent=cardsEarned;
+
+  const trainedSeconds=Math.max(0,selectedMinutes*60-secondsLeft);
+  $('endTime').textContent=formatTime(trainedSeconds);
+
+  $('startSession').disabled=false;
+  $('startSession').textContent='▶ Training starten';
+  document.querySelectorAll('.choice-btn,.duration-btn').forEach(b=>b.disabled=false);
+}
+
+$('startSession').addEventListener('click',startTraining);
+$('restartSession').addEventListener('click',startTraining);
+
+$('cancelTraining').addEventListener('click',()=>{
+  if(!trainingActive && !rewardOpen)return;
+  finishTraining('cancel');
+});
+
+$('backHome').addEventListener('click',()=>{
+  $('sessionEnd').classList.add('hidden');
+  $('activeTraining').classList.add('hidden');
+  $('cancelTraining').classList.add('hidden');
+
+  $('trainer').classList.remove('hidden');
+  $('album').classList.add('hidden');
+  $('trainerTab').classList.add('active');
+  $('albumTab').classList.remove('active');
+
+  $('startSession').disabled=false;
+  $('startSession').textContent='▶ Training starten';
+  document.querySelectorAll('.choice-btn,.duration-btn').forEach(b=>b.disabled=false);
+});
+
+$('form').addEventListener('submit',e=>{
+  e.preventDefault();
+  if(!trainingActive || rewardOpen)return;
+
+  let isCorrect=false;
+
+  if(currentTaskType==='rest'){
+    const q=Number($('restQuotient').value);
+    const rem=Number($('restRemainder').value);
+    isCorrect=(q===currentAnswer && rem===currentRemainder);
+  }else{
+    isCorrect=(Number($('answer').value)===currentAnswer);
+  }
+
+  if(isCorrect){
+    totalCorrect++;
+    rewardCounter++;
+    const praise=['Toll! 😊','Super! 🎉','Richtig! ⭐','Klasse! 💪','Perfekt! ✨','Mega! 🔥','Stark! 💥','Wow! 🏆','Bombe! 💣','Genial! 🧠'];
+    $('rewardText').textContent=praise[r(0,praise.length-1)];
+    $('msg').textContent='✅ Richtig!';
+    updateUi();
+
+    if(rewardCounter>=rewardTarget()){
+      rewardCounter=0;
+      cardsEarned++;
+      updateUi();
+      showAutomaticReward();
+      return;
+    }
+
+    setTimeout(newTask,1100);
+    return;
+  }
+
+  attemptsForTask++;
+
+  if(attemptsForTask<2){
+    $('msg').textContent='❌ Noch nicht richtig – du hast noch einen Versuch.';
+    focusAnswerField();
+    return;
+  }
+
+  if(currentTaskType==='rest'){
+    $('msg').textContent=`❌ Die Lösung ist ${currentAnswer} Rest ${currentRemainder}.`;
+  }else{
+    $('msg').textContent=`❌ Die Lösung ist ${currentAnswer}.`;
+  }
+
+  setTimeout(newTask,1400);
+});
+
+async function info(p){
+  // Ausschließlich echte TheSportsDB-Spielerbilder verwenden.
+  // Cartoon-Artwork aus players.json wird bewusst ignoriert.
+  // Neue Cache-Version verhindert, dass frühere Cartoon-/Ersatzbilder weiter erscheinen.
+  const key='fm_info_realphoto_cutout_v1_'+p.id;
+  const cached=localStorage.getItem(key);
+  if(cached){
+    try{return JSON.parse(cached)}catch(e){}
+  }
+
+  try{
+    const d=await (await fetch(API+encodeURIComponent(p.search||p.name))).json();
+    const candidates=Array.isArray(d.player)?d.player:[];
+    const sid=String(p.sportsdbId||'');
+    const x=(sid && candidates.find(v=>String(v.idPlayer||'')===sid)) || candidates[0];
+
+    // Echtes TheSportsDB-Spielerbild: strThumb hat Vorrang.
+    // Falls kein strThumb vorhanden ist, wird strCutout als Alternative verwendet.
+    // p.cartoon wird weiterhin bewusst ignoriert.
+    const v={
+      photo:x?(x.strThumb||x.strCutout||''):'',
+      team:x?(x.strTeam||p.club||''):(p.club||'')
+    };
+
+    localStorage.setItem(key,JSON.stringify(v));
+    return v;
+  }catch(e){
+    return {photo:'',team:p.club||''};
+  }
+}
+
+function positionDeutsch(pos){
+  const map={
+    GK:'TW',
+    CB:'IV',
+    LB:'LV',
+    RB:'RV',
+    LWB:'LAV',
+    RWB:'RAV',
+    CDM:'ZDM',
+    CM:'ZM',
+    CAM:'ZOM',
+    LM:'LM',
+    RM:'RM',
+    LW:'LF',
+    RW:'RF',
+    CF:'HS',
+    ST:'ST'
+  };
+  return map[String(pos||'').toUpperCase()] || pos || '';
+}
+
+const teamBadgeCache=new Map();
+async function teamBadge(teamId){
+  if(!teamId) return '';
+  const key=String(teamId);
+  if(teamBadgeCache.has(key)) return teamBadgeCache.get(key);
+
+  // TheSportsDB: Team über Namen suchen ist mit dem freien V1-Endpunkt
+  // zuverlässiger als lookupteam mit dem Beispiel-Key. Wir nutzen die ID
+  // nur zum Gegenprüfen, wenn sie im Ergebnis vorhanden ist.
+  const promise=(async()=>{
+    try{
+      const player=players.find(x=>String(x.sportsdbTeamId||'')===key);
+      const club=player?.club||'';
+      if(!club) return '';
+      const res=await fetch('https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t='+encodeURIComponent(club));
+      if(!res.ok) return '';
+      const data=await res.json();
+      const teams=Array.isArray(data.teams)?data.teams:[];
+      const exact=teams.find(t=>String(t.idTeam||'')===key) ||
+                  teams.find(t=>(t.strTeam||'').toLowerCase()===club.toLowerCase()) ||
+                  teams[0];
+      return exact?.strBadge||'';
+    }catch(e){
+      return '';
+    }
+  })();
+
+  teamBadgeCache.set(key,promise);
+  return promise;
+}
+function card(p){
+  let d=document.createElement('article');
+  d.className='card '+(p.rarity||'Gold');
+  const club=p.club||'Fußballspieler';
+  d.innerHTML=`
+    <div class="top">
+      <div class="rating-block">${p.rating??'-'}</div>
+      <div class="top-right">
+        <div class="pos">${positionDeutsch(p.pos)}</div>
+        <img class="club-badge" hidden alt="${club} Wappen">
+      </div>
+    </div>
+    <div class="photo"><span>${initials(p.name)}</span></div>
+    <div class="name">${p.name}</div>
+    <div class="team">${club}</div>
+    <div class="rarity">${p.rarity||''}</div>
+    <div class="stats">
+      <div class="stat"><span>TEM</span><b>${p.tempo??'-'}</b></div>
+      <div class="stat"><span>SCH</span><b>${p.schuss??'-'}</b></div>
+      <div class="stat"><span>PAS</span><b>${p.passen??'-'}</b></div>
+      <div class="stat"><span>DRI</span><b>${p.dribbling??'-'}</b></div>
+      <div class="stat"><span>DEF</span><b>${p.defensive??'-'}</b></div>
+      <div class="stat"><span>PHY</span><b>${p.physis??'-'}</b></div>
+    </div>`;
+
+  info(p).then(x=>{
+    let ph=d.querySelector('.photo');
+    if(x.photo)ph.innerHTML=`<img src="${x.photo}" alt="${p.name}">`;
+  });
+  teamBadge(p.sportsdbTeamId).then(url=>{
+  if(!url) return;
+  const badge=d.querySelector('.club-badge');
+  if(!badge) return;
+  badge.src=url;
+  badge.hidden=false;
+  badge.onerror=()=>{badge.hidden=true};
+  });
+  return d;
+
+}
+
+function chooseRewardPlayer(){
+  const unowned=players.filter(p=>!owned.includes(p.id));
+  const pool=unowned.length?unowned:players;
+  return pool[r(0,pool.length-1)];
+}
+
+function showAutomaticReward(){
+  rewardOpen=true;
+  const p=chooseRewardPlayer();
+  const isNew=!owned.includes(p.id);
+
+  if(isNew){
+    owned.push(p.id);
+    localStorage.setItem('fm_owned',JSON.stringify(owned));
+  }
+
+  $('rewardTitle').textContent=isNew?'✨ Neue Karte! ✨':'🔁 Schon gesammelt';
+  $('rewardCard').innerHTML='';
+  $('rewardCard').appendChild(card(p));
+  $('rewardOverlay').hidden=false;
+  updateUi();
+  renderAlbum();
+}
+
+$('closeReward').addEventListener('click',()=>{
+  $('rewardOverlay').hidden=true;
+  rewardOpen=false;
+  if(trainingActive && secondsLeft>0){
+    $('msg').textContent='⚽ Weiter geht’s!';
+    newTask();
+  }else if(secondsLeft<=0){
+    finishTraining();
+  }
+});
+
+function albumCategoriesFor(p){
+  // Die Kategorie kommt jetzt direkt aus players.json.
+  // Dadurch kann dieselbe Karte gleichzeitig z.B. in Bundesliga und Champions League liegen.
+  return Array.isArray(p.competitions) ? p.competitions : [];
+}
+
+function appendClubSections(parent,list){
+  const clubs={};
+  list.forEach(p=>{
+    const club=p.club||'Ohne Verein';
+    (clubs[club]??=[]).push(p);
+  });
+
+  Object.keys(clubs)
+    .sort((a,b)=>a.localeCompare(b,'de'))
+    .forEach(club=>{
+      const clubPlayers=clubs[club];
+      const ownedInClub=clubPlayers.filter(p=>owned.includes(p.id)).length;
+
+      const section=document.createElement('details');
+      section.className='club-section';
+
+      const title=document.createElement('summary');
+      title.className='club-title';
+      title.innerHTML=`
+        <span class="club-title-main">
+          <span>⚽ ${club}</span>
+          <small>${ownedInClub}/${clubPlayers.length}</small>
+        </span>`;
+      section.appendChild(title);
+
+      const grid=document.createElement('div');
+      grid.className='club-grid';
+
+      clubPlayers
+        .slice()
+        .sort((a,b)=>(b.rating||0)-(a.rating||0)||a.name.localeCompare(b.name,'de'))
+        .forEach(p=>{
+          if(owned.includes(p.id)){
+            grid.appendChild(card(p));
+          }else{
+            const lockedWrap=document.createElement('div');
+            lockedWrap.className='locked-card-wrap';
+            lockedWrap.appendChild(card(p));
+            grid.appendChild(lockedWrap);
+          }
+        });
+
+      section.appendChild(grid);
+      parent.appendChild(section);
+    });
+}
+
+function renderAlbum(){
+  const wrap=$('albumClubs');
+  wrap.innerHTML='';
+
+  const definitions=[
+    {id:'bundesliga',icon:'🇩🇪',title:'Bundesliga'},
+    {id:'champions',icon:'🏆',title:'Champions League'},
+    {id:'europa',icon:'🟠',title:'Europa League'},
+    {id:'restderwelt',icon:'⭐',title:'Rest der Welt'}
+  ];
+
+  definitions.forEach(def=>{
+    const list=players.filter(p=>albumCategoriesFor(p).includes(def.id));
+    if(!list.length) return;
+
+    const uniqueOwned=new Set(list.filter(p=>owned.includes(p.id)).map(p=>p.id)).size;
+    const uniqueTotal=new Set(list.map(p=>p.id)).size;
+
+    const category=document.createElement('details');
+    category.className='album-category';
+
+    const summary=document.createElement('summary');
+    summary.className='album-category-title';
+    summary.innerHTML=`
+      <span>${def.icon} ${def.title}</span>
+      <span class="album-category-count">${uniqueOwned}/${uniqueTotal}</span>`;
+    category.appendChild(summary);
+
+    const body=document.createElement('div');
+    body.className='album-category-body';
+    appendClubSections(body,list);
+    category.appendChild(body);
+
+    wrap.appendChild(category);
+  });
+
+  updateUi();
+}
+
+$('trainerTab').addEventListener('click',()=>{
+  $('trainer').classList.remove('hidden');
+  $('album').classList.add('hidden');
+  $('trainerTab').classList.add('active');
+  $('albumTab').classList.remove('active');
+});
+
+$('albumTab').addEventListener('click',()=>{
+  $('trainer').classList.add('hidden');
+  $('album').classList.remove('hidden');
+  $('albumTab').classList.add('active');
+  $('trainerTab').classList.remove('active');
+  renderAlbum();
+});
+
+
+$('restQuotient').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    $('restRemainder').focus();
+  }
+});
+
+start();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
