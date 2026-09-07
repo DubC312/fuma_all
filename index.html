@@ -7,18 +7,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fußball-Mathe">
-<meta name="theme-color" content="#0f5132">
+<meta name="theme-color" content="#0d47a1">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
 <style>
 :root{
-  --green:#146c43;
-  --green-dark:#0f5132;
-  --green-deep:#092f20;
+  --green:#1769aa;
+  --green-dark:#0d47a1;
+  --green-deep:#082f6b;
   --paper:rgba(255,255,255,.94);
-  --text:#17311f;
+  --text:#16324f;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -27,7 +27,7 @@ body{
   margin:0;
   color:var(--text);
   min-height:100vh;
-  background:#173c2b;
+  background:#102f4f;
   padding-left:max(12px,env(safe-area-inset-left));
   padding-right:max(12px,env(safe-area-inset-right));
   padding-bottom:max(12px,env(safe-area-inset-bottom));
@@ -45,7 +45,7 @@ body::after{
   content:"";
   position:fixed;
   inset:0;
-  background:rgba(15,55,38,.18);
+  background:rgba(10,48,92,.20);
   z-index:-1;
   pointer-events:none;
 }
@@ -53,7 +53,7 @@ body::after{
   body{padding-top:max(10px,env(safe-area-inset-top))}
 }
 header{
-  background:rgba(15,81,50,.92);
+  background:rgba(13,71,161,.92);
   color:#fff;
   padding:18px;
   text-align:center;
@@ -91,9 +91,9 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
 
 .control-title{text-align:center;font-weight:900;margin:8px 0}
 .choice-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
-.choice-btn{min-width:110px;background:#2a7955}
-.duration-btn{min-width:105px;background:#526f60}
-.choice-btn.active,.duration-btn.active{background:#092f20}
+.choice-btn{min-width:110px;background:#2f75b5}
+.duration-btn{min-width:105px;background:#526f8f}
+.choice-btn.active,.duration-btn.active{background:#082f6b}
 
 /* Punkt vor Strich und Mix zusätzlich golden hervorheben */
 .choice-btn[data-op="punkt"],
@@ -115,23 +115,23 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
   margin-top:12px;
 }
 .status-card{
-  background:#f5fbf7;
-  border:1px solid #cfe2d5;
+  background:#f3f8fd;
+  border:1px solid #cbdceb;
   border-radius:12px;
   padding:10px;
   text-align:center;
 }
 .status-card b{display:block;font-size:1.15rem}
 
-.progress{height:12px;background:#dbe8de;border-radius:20px;overflow:hidden;margin-top:10px}
-.progress div{height:100%;background:#1f8f58;width:0;transition:width .25s}
+.progress{height:12px;background:#d7e5f2;border-radius:20px;overflow:hidden;margin-top:10px}
+.progress div{height:100%;background:#2680c2;width:0;transition:width .25s}
 .task{text-align:center;font-size:clamp(42px,8vw,64px);font-weight:900;margin:25px}
 #answer{
   width:160px;
   text-align:center;
   padding:14px;
   border-radius:12px;
-  border:2px solid #a9b9ad;
+  border:2px solid #a9bdcf;
   background:#fff;
 }
 .msg{text-align:center;font-weight:800;min-height:26px}
@@ -141,8 +141,8 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
   padding:12px 14px;
   border-radius:14px;
   background:#ffffffdd;
-  border:1px solid #cfe2d5;
-  color:#3e5547;
+  border:1px solid #cbdceb;
+  color:#3e5368;
   line-height:1.45;
   font-size:.92rem;
 }
@@ -157,7 +157,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
 }
 .album-category-title{
   color:white;
-  background:linear-gradient(135deg,rgba(9,47,32,.98),rgba(24,92,61,.95));
+  background:linear-gradient(135deg,rgba(8,47,107,.98),rgba(30,105,170,.95));
   padding:16px 18px;
   cursor:pointer;
   list-style:none;
@@ -184,7 +184,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
 }
 .club-title{
   color:white;
-  background:rgba(9,47,32,.88);
+  background:rgba(8,47,107,.90);
   border-radius:14px;
   padding:12px 14px;
   margin:0;
@@ -328,7 +328,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
   justify-content:center;
   text-align:center;
   color:#d9e0da;
-  background:rgba(9,47,32,.65);
+  background:rgba(8,47,107,.68);
   padding:14px;
 }
 
@@ -356,7 +356,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
   font-weight:900;
   font-size:1.05rem;
   color:#fff;
-  background:rgba(9,47,32,.38);
+  background:rgba(8,47,107,.42);
   text-shadow:0 2px 5px #0008;
   pointer-events:none;
 }
@@ -392,7 +392,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
   text-align:center;
   padding:14px;
   border-radius:12px;
-  border:2px solid #a9b9ad;
+  border:2px solid #a9bdcf;
   background:#fff;
 }
 .rest-label{
@@ -425,8 +425,8 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
 .meme67-card{
   width:min(360px,92vw);
   border-radius:28px;
-  background:linear-gradient(145deg,#fff,#eaf8ef);
-  border:5px solid #0f5132;
+  background:linear-gradient(145deg,#fff,#eaf4fc);
+  border:5px solid #0d47a1;
   box-shadow:0 20px 70px #0008;
   text-align:center;
   padding:22px 18px 18px;
@@ -437,7 +437,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
   line-height:.9;
   font-weight:1000;
   letter-spacing:-8px;
-  color:#0f5132;
+  color:#0d47a1;
   text-shadow:4px 4px 0 #f2cf45;
 }
 .meme67-text{
@@ -485,7 +485,7 @@ body.meme67-shake .ipad-tip{
 @keyframes meme67flash{
   0%{background:rgba(255,255,255,.02)}
   50%{background:rgba(242,207,69,.18)}
-  100%{background:rgba(15,81,50,.16)}
+  100%{background:rgba(13,71,161,.16)}
 }
 
 @media (prefers-reduced-motion:reduce){
