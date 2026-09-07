@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fussball-mathe-v11';
+const CACHE_NAME = 'fussball-mathe-v2';
 
 const CORE_FILES = [
   './',
