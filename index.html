@@ -1043,12 +1043,94 @@ function positionDeutsch(pos){
 const teamBadgeCache=new Map();
 
 const CLUB_BADGE_TEAM_IDS={
-  'Paris Saint-Germain':'133714','PSG':'133714',
-  'Real Madrid':'133738',
-  'AEK Athens':'133753','AEK Athen':'133753',
-  'PSV Eindhoven':'133768','PSV':'133768',
-  'Inter Milan':'133681','Inter':'133681',
-  'Sturm Graz':'137743'
+  "1. FC Köln":"133654",
+  "1. FC Union Berlin":"134690",
+  "1. FSV Mainz 05":"133665",
+  "AC Milan":"133667",
+  "AEK Athen":"133753",
+  "AEK Athens":"133753",
+  "AFC Bournemouth":"134301",
+  "AS Roma":"133682",
+  "AZ Alkmaar":"133767",
+  "Al Nassr":"136022",
+  "Arsenal":"133604",
+  "Aston Villa":"133601",
+  "Atlético de Madrid":"133729",
+  "Bayer 04 Leverkusen":"133666",
+  "Beşiktaş":"133794",
+  "Bodø/Glimt":"135497",
+  "Borussia Dortmund":"133650",
+  "Borussia Mönchengladbach":"134779",
+  "Celtic":"133647",
+  "Chicago Fire":"134154",
+  "Club Brugge":"133789",
+  "Como 1907":"134243",
+  "Crystal Palace":"133632",
+  "Eintracht Frankfurt":"133814",
+  "FC Augsburg":"133652",
+  "FC Barcelona":"133739",
+  "FC Bayern München":"133664",
+  "FC Porto":"134114",
+  "FC Red Bull Salzburg":"133970",
+  "FC Schalke 04":"133661",
+  "Fenerbahçe":"133807",
+  "Ferencváros":"134620",
+  "Feyenoord":"133758",
+  "GNK Dinamo Zagreb":"133961",
+  "Galatasaray":"133804",
+  "Hamburger SV":"133651",
+  "Inter":"133681",
+  "Inter Miami CF":"137699",
+  "Inter Milan":"133681",
+  "Jagiellonia Białystok":"135297",
+  "Juventus":"133676",
+  "LA Galaxy":"134153",
+  "LASK":"137261",
+  "LOSC Lille":"133711",
+  "Lech Poznań":"134010",
+  "Lillestrøm SK":"134569",
+  "Liverpool":"133602",
+  "Los Angeles FC":"136050",
+  "Manchester City":"133613",
+  "Manchester United":"133612",
+  "Minnesota United":"135852",
+  "N.E.C.":"133760",
+  "Olympiacos":"133754",
+  "Olympique Lyonnais":"133713",
+  "Olympique de Marseille":"133707",
+  "Omonia Nicosia":"133986",
+  "PSG":"133714",
+  "PSV":"133768",
+  "PSV Eindhoven":"133768",
+  "Paris Saint-Germain":"133714",
+  "RB Leipzig":"134695",
+  "RC Celta":"133937",
+  "RC Lens":"133822",
+  "RSC Anderlecht":"133776",
+  "Real Betis":"133722",
+  "Real Madrid":"133738",
+  "Real Sociedad":"133724",
+  "SC Freiburg":"133653",
+  "SC Paderborn 07":"134551",
+  "SL Benfica":"134108",
+  "SSC Napoli":"133670",
+  "SV Elversberg":"138411",
+  "SV Werder Bremen":"133662",
+  "Santos":"134286",
+  "Shakhtar Donetsk":"134126",
+  "Slavia Praha":"136036",
+  "Sparta Praha":"134007",
+  "Sporting CP":"135708",
+  "Stade Rennais":"133719",
+  "Sturm Graz":"137743",
+  "Sunderland":"133603",
+  "TSG Hoffenheim":"133657",
+  "Union Saint-Gilloise":"138141",
+  "Vancouver Whitecaps FC":"134147",
+  "VfB Stuttgart":"133660",
+  "Viking FK":"134570",
+  "Viktoria Plzeň":"134015",
+  "Villarreal CF":"133740"
 };
 const CLUB_SEARCH_NAMES={
   'PSG':'Paris Saint-Germain','AEK Athen':'AEK Athens',
@@ -1058,29 +1140,37 @@ const CLUB_SEARCH_NAMES={
 async function teamBadge(club){
   club=String(club||'').trim();
   if(!club) return '';
+
   const key=club.toLowerCase();
   if(teamBadgeCache.has(key)) return teamBadgeCache.get(key);
+
   const promise=(async()=>{
     try{
-      const searchName=CLUB_SEARCH_NAMES[club]||club;
-      const expectedId=CLUB_BADGE_TEAM_IDS[club]||'';
-      const res=await fetch('https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t='+encodeURIComponent(searchName));
+      const fixedId=CLUB_BADGE_TEAM_IDS[club]||'';
+      if(!fixedId) return '';
+
+      const res=await fetch(
+        'https://www.thesportsdb.com/api/v1/json/123/lookupteam.php?id='+
+        encodeURIComponent(fixedId)
+      );
       if(!res.ok) return '';
+
       const data=await res.json();
-      const teams=Array.isArray(data.teams)?data.teams:[];
-      if(expectedId){
-        const exact=teams.find(t=>String(t.idTeam||'')===expectedId);
-        return exact?.strBadge||'';
-      }
-      const norm=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-      const exact=teams.find(t=>norm(t.strTeam)===norm(searchName));
-      return exact?.strBadge||'';
-    }catch(e){ return ''; }
+      const team=Array.isArray(data.teams)?data.teams[0]:null;
+
+      // Nie ein Wappen aus einer anderen Sportart übernehmen.
+      if(!team || String(team.strSport||'').toLowerCase()!=='soccer') return '';
+
+      return team.strBadge||'';
+    }catch(e){
+      return '';
+    }
   })();
+
   teamBadgeCache.set(key,promise);
   return promise;
 }
-	
+
 function card(p){
   let d=document.createElement('article');
   d.className='card '+(p.rarity||'Gold');
@@ -1189,22 +1279,33 @@ function appendClubSections(parent,list){
 
       const grid=document.createElement('div');
       grid.className='club-grid';
-
-      clubPlayers
-        .slice()
-        .sort((a,b)=>(b.rating||0)-(a.rating||0)||a.name.localeCompare(b.name,'de'))
-        .forEach(p=>{
-          if(owned.includes(p.id)){
-            grid.appendChild(card(p));
-          }else{
-            const lockedWrap=document.createElement('div');
-            lockedWrap.className='locked-card-wrap';
-            lockedWrap.appendChild(card(p));
-            grid.appendChild(lockedWrap);
-          }
-        });
-
       section.appendChild(grid);
+
+      let rendered=false;
+
+      function renderClub(){
+        if(rendered) return;
+        rendered=true;
+
+        clubPlayers
+          .slice()
+          .sort((a,b)=>(b.rating||0)-(a.rating||0)||a.name.localeCompare(b.name,'de'))
+          .forEach(p=>{
+            if(owned.includes(p.id)){
+              grid.appendChild(card(p));
+            }else{
+              const lockedWrap=document.createElement('div');
+              lockedWrap.className='locked-card-wrap';
+              lockedWrap.appendChild(card(p));
+              grid.appendChild(lockedWrap);
+            }
+          });
+      }
+
+      section.addEventListener('toggle',()=>{
+        if(section.open) renderClub();
+      });
+
       parent.appendChild(section);
     });
 }
