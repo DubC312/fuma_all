@@ -1041,35 +1041,46 @@ function positionDeutsch(pos){
 }
 
 const teamBadgeCache=new Map();
-async function teamBadge(teamId){
-  if(!teamId) return '';
-  const key=String(teamId);
-  if(teamBadgeCache.has(key)) return teamBadgeCache.get(key);
 
-  // TheSportsDB: Team über Namen suchen ist mit dem freien V1-Endpunkt
-  // zuverlässiger als lookupteam mit dem Beispiel-Key. Wir nutzen die ID
-  // nur zum Gegenprüfen, wenn sie im Ergebnis vorhanden ist.
+const CLUB_BADGE_TEAM_IDS={
+  'Paris Saint-Germain':'133714','PSG':'133714',
+  'Real Madrid':'133738',
+  'AEK Athens':'133753','AEK Athen':'133753',
+  'PSV Eindhoven':'133768','PSV':'133768',
+  'Inter Milan':'133681','Inter':'133681',
+  'Sturm Graz':'137743'
+};
+const CLUB_SEARCH_NAMES={
+  'PSG':'Paris Saint-Germain','AEK Athen':'AEK Athens',
+  'PSV':'PSV Eindhoven','Inter':'Inter Milan'
+};
+	
+async function teamBadge(club){
+  club=String(club||'').trim();
+  if(!club) return '';
+  const key=club.toLowerCase();
+  if(teamBadgeCache.has(key)) return teamBadgeCache.get(key);
   const promise=(async()=>{
     try{
-      const player=players.find(x=>String(x.sportsdbTeamId||'')===key);
-      const club=player?.club||'';
-      if(!club) return '';
-      const res=await fetch('https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t='+encodeURIComponent(club));
+      const searchName=CLUB_SEARCH_NAMES[club]||club;
+      const expectedId=CLUB_BADGE_TEAM_IDS[club]||'';
+      const res=await fetch('https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t='+encodeURIComponent(searchName));
       if(!res.ok) return '';
       const data=await res.json();
       const teams=Array.isArray(data.teams)?data.teams:[];
-      const exact=teams.find(t=>String(t.idTeam||'')===key) ||
-                  teams.find(t=>(t.strTeam||'').toLowerCase()===club.toLowerCase()) ||
-                  teams[0];
+      if(expectedId){
+        const exact=teams.find(t=>String(t.idTeam||'')===expectedId);
+        return exact?.strBadge||'';
+      }
+      const norm=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const exact=teams.find(t=>norm(t.strTeam)===norm(searchName));
       return exact?.strBadge||'';
-    }catch(e){
-      return '';
-    }
+    }catch(e){ return ''; }
   })();
-
   teamBadgeCache.set(key,promise);
   return promise;
 }
+	
 function card(p){
   let d=document.createElement('article');
   d.className='card '+(p.rarity||'Gold');
@@ -1100,22 +1111,12 @@ function card(p){
     if(x.photo)ph.innerHTML=`<img src="${x.photo}" alt="${p.name}">`;
   });
   const badge=d.querySelector('.club-badge');
-
-  // Vereinswappen wie in der Cartoon-Version:
-  // 1. bereits in players.json gespeichertes Wappen bevorzugen
-  // 2. sonst TheSportsDB über sportsdbTeamId/Vereinsname als Fallback
-  if(badge && p.clubBadge){
-    badge.src=p.clubBadge;
+teamBadge(club).then(url=>{
+    if(!url || !badge) return;
+    badge.src=url;
     badge.hidden=false;
     badge.onerror=()=>{badge.hidden=true};
-  }else{
-    teamBadge(p.sportsdbTeamId).then(url=>{
-      if(!url || !badge) return;
-      badge.src=url;
-      badge.hidden=false;
-      badge.onerror=()=>{badge.hidden=true};
-    });
-  }
+  });
   return d;
 
 }
