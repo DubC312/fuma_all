@@ -290,7 +290,7 @@ button.active{background:var(--green-deep);box-shadow:0 0 0 3px #fff8 inset}
 .top{display:flex;justify-content:space-between;align-items:flex-start;font-weight:900;font-size:28px}
 .rating-block{line-height:1}
 .card .top-right{display:flex;align-items:center;gap:7px}
-.card .club-badge{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.card .club-badge{width:38px;height:38px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
 .card .club-badge[hidden]{display:none}
 .pos{font-size:20px;padding-top:3px}
 .photo{
@@ -1099,14 +1099,23 @@ function card(p){
     let ph=d.querySelector('.photo');
     if(x.photo)ph.innerHTML=`<img src="${x.photo}" alt="${p.name}">`;
   });
-  teamBadge(p.sportsdbTeamId).then(url=>{
-  if(!url) return;
   const badge=d.querySelector('.club-badge');
-  if(!badge) return;
-  badge.src=url;
-  badge.hidden=false;
-  badge.onerror=()=>{badge.hidden=true};
-  });
+
+  // Vereinswappen wie in der Cartoon-Version:
+  // 1. bereits in players.json gespeichertes Wappen bevorzugen
+  // 2. sonst TheSportsDB über sportsdbTeamId/Vereinsname als Fallback
+  if(badge && p.clubBadge){
+    badge.src=p.clubBadge;
+    badge.hidden=false;
+    badge.onerror=()=>{badge.hidden=true};
+  }else{
+    teamBadge(p.sportsdbTeamId).then(url=>{
+      if(!url || !badge) return;
+      badge.src=url;
+      badge.hidden=false;
+      badge.onerror=()=>{badge.hidden=true};
+    });
+  }
   return d;
 
 }
