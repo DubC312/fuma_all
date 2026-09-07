@@ -6,7 +6,7 @@
 <title>Fußball-Mathe-Trainer</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ultimate Fußball-Mathe">
+<meta name="apple-mobile-web-app-title" content="Fußball-Mathe">
 <meta name="theme-color" content="#0d47a1">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
@@ -584,7 +584,7 @@ body.meme67-shake .ipad-tip{
           <div class="status-card">Richtig<b id="totalCorrect">0</b></div>
           <div class="status-card">Karten<b id="cardsEarned">0</b></div>
         </div>
-        <div class="status-card" style="margin-top:10px">Bis zur nächsten Karte<b><span id="rewardProgress">0</span>/10</b></div>
+        <div class="status-card" style="margin-top:10px">Bis zur nächsten Karte<b><span id="rewardProgress">0</span>/<span id="rewardGoal">10</span></b></div>
         <div class="progress"><div id="bar"></div></div>
 
         <div class="task" id="task"></div>
@@ -724,7 +724,7 @@ function newTask(){
 
   let a,b,c,symbol='',taskKey='',taskText='',tries=0;
 
-   do{
+    do{
     currentTaskType=pickTaskType();
     setAnswerMode(currentTaskType);
 
@@ -848,7 +848,7 @@ function updateUi(){
   $('timeLeft').textContent=formatTime(Math.max(0,secondsLeft));
   $('totalCorrect').textContent=totalCorrect;
   $('rewardProgress').textContent=rewardCounter;
-  $('rewardGoal').textContent=rewardTarget();
+  if($('rewardGoal')) $('rewardGoal').textContent=rewardTarget();
   $('cardsEarned').textContent=cardsEarned;
   $('bar').style.width=(rewardCounter/rewardTarget()*100)+'%';
   $('ownedCount').textContent=owned.length;
