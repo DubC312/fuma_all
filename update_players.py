@@ -137,38 +137,12 @@ def best_sportsdb_candidate(candidates, wanted_name):
         return scored[0][1], True
     return None, False
 
-def cartoon_from_player_archive(sid):
-    """
-    V5: Cartoon direkt aus dem Cartoon-Archiv des konkreten SportsDB-Spielers.
-    Gibt nur URLs aus /images/media/player/cartoon/ zurück.
-    """
-    if not sid:
+def real_photo_from_player(x):
+    """Nur echte TheSportsDB-Spielerbilder: strThumb bevorzugt, strCutout als Alternative."""
+    if not x:
         return ""
-    url=f"https://www.thesportsdb.com/player_art.php?art=cartoon&p={sid}"
-    html=get(url, timeout=30).text
-    soup=BeautifulSoup(html, "html.parser")
+    return x.get("strThumb") or x.get("strCutout") or ""
 
-    # Zuerst reguläre <img>-Quellen.
-    for img in soup.find_all("img"):
-        src=img.get("src") or img.get("data-src") or img.get("data-original") or ""
-        if "/images/media/player/cartoon/" in src:
-            if src.startswith("//"):
-                src="https:"+src
-            elif src.startswith("/"):
-                src="https://www.thesportsdb.com"+src
-            return src
-
-    # Fallback: manche Archive setzen die URL in HTML/JS/CSS.
-    m=re.search(r'((?:https?:)?//[^"\'\s<>]+/images/media/player/cartoon/[^"\'\s<>]+)', html)
-    if m:
-        src=m.group(1)
-        if src.startswith("//"):
-            src="https:"+src
-        return src
-    m=re.search(r'(/images/media/player/cartoon/[^"\'\s<>]+)', html)
-    if m:
-        return "https://www.thesportsdb.com"+m.group(1)
-    return ""
 POSITION_SET = {"GK","CB","LB","RB","LWB","RWB","CDM","CM","CAM","LM","RM","LW","RW","CF","ST"}
 
 TEAM_ALIASES = {
@@ -378,134 +352,94 @@ def rarity(rating):
     return "Bronze"
 
 def sportsdb_enrich(rows):
+    """
+    Echte TheSportsDB-Spielerbilder:
+    1) SportsDB-ID/Team-ID über die offizielle searchplayers-API zuordnen.
+    2) strThumb wird bevorzugt.
+    3) Falls strThumb fehlt, wird strCutout verwendet.
+    4) Cartoon-Artwork wird weder gesucht noch gespeichert.
+    """
+    before=sum(1 for p in rows if p.get("photo"))
+    thumb_added=0
+    cutout_added=0
     id_override_hits=0
     alias_hits=0
-    """
-    V5 Cartoon-Logik:
-    1) Vorhandene Cartoons bleiben erhalten.
-    2) Bei fehlendem Cartoon wird die SportsDB-Spielerzuordnung neu geprüft.
-       Schreibvarianten (z.B. Serhou -> Sehrou Guirassy) werden berücksichtigt.
-    3) Danach wird zuerst das Cartoon-Archiv des konkreten Spielers über seine
-       SportsDB-ID geprüft.
-    4) Erst danach werden wie bisher die Teamseiten als zweite Cartoon-Quelle geprüft.
-    5) Es werden ausschließlich /player/cartoon/-Bilder als Cartoon gespeichert.
-    """
-    before=sum(1 for p in rows if p.get("cartoon"))
-    team_candidates={}
-    archive_added=0
 
-    # 1) Fehlende Spieler-IDs/Schreibvarianten frisch auflösen und Player-Archive prüfen.
     for idx,p in enumerate(rows, 1):
-        if p.get("cartoon"):
-            sid=str(p.get("sportsdbId") or "")
-            tid=str(p.get("sportsdbTeamId") or "")
-            if sid and tid:
-                team_candidates.setdefault(sid,set()).add(tid)
-            continue
-
         wanted=p.get("search") or p.get("name") or ""
         wanted_norm=norm(p.get("name") or wanted)
         sid=str(p.get("sportsdbId") or "")
-        old_tid=str(p.get("sportsdbTeamId") or "")
-        tids=set([old_tid]) if old_tid else set()
 
-        # Verifizierte IDs haben Vorrang.
         override_sid = (
             SPORTSDB_ID_OVERRIDES.get(norm(p.get("name") or ""))
             or SPORTSDB_ID_OVERRIDES.get(norm(p.get("search") or ""))
             or SPORTSDB_ID_OVERRIDES.get(wanted_norm)
         )
         if override_sid:
-            if str(p.get("sportsdbId") or "") != str(override_sid):
+            if sid != str(override_sid):
                 id_override_hits += 1
             sid=str(override_sid)
             p["sportsdbId"]=sid
 
         try:
             query=sportsdb_search_name(wanted)
+            if norm(query) != norm(wanted):
+                alias_hits += 1
             data=get(SPORTSDB+quote_plus(query)).json()
             candidates=data.get("player") or []
-            x, trusted = best_sportsdb_candidate(candidates, p.get("name") or wanted)
+
+            # Bei fester ID exakt diesen SportsDB-Spieler bevorzugen.
+            x=None
+            if sid:
+                x=next((v for v in candidates if str(v.get("idPlayer") or "") == sid), None)
+            if x is None:
+                x, trusted = best_sportsdb_candidate(candidates, p.get("name") or wanted)
+            else:
+                trusted=True
 
             if x:
                 fresh_sid=str(x.get("idPlayer") or "")
                 fresh_tid=str(x.get("idTeam") or "")
                 if fresh_sid and (trusted or not sid):
-                    # Ein verifizierter Override wird nicht durch einen abweichenden
-                    # unsicheren Suchtreffer überschrieben.
                     if not override_sid or fresh_sid == override_sid:
                         p["sportsdbId"]=fresh_sid
                         sid=fresh_sid
                 if fresh_tid:
-                    tids.add(fresh_tid)
                     p["sportsdbTeamId"]=fresh_tid
+
+                # Nur echte Bilder; niemals Cartoon.
+                thumb=x.get("strThumb") or ""
+                cutout=x.get("strCutout") or ""
+                photo=thumb or cutout
+                if photo:
+                    if not p.get("photo"):
+                        if thumb:
+                            thumb_added += 1
+                        else:
+                            cutout_added += 1
+                    p["photo"]=photo
+                else:
+                    p.pop("photo", None)
 
             time.sleep(2.1)
         except Exception as e:
             print(f"SportsDB Suche {p.get('name','?')}: {e}")
 
-        # V5-Kern: direktes Player-Cartoon-Archiv.
-        if sid and not p.get("cartoon"):
-            try:
-                src=cartoon_from_player_archive(sid)
-                if src and "/images/media/player/cartoon/" in src:
-                    p["cartoon"]=src
-                    archive_added+=1
-                    print(f"Cartoon-Archiv: {p.get('name')} -> {sid}")
-                time.sleep(.8)
-            except Exception as e:
-                print(f"Cartoon-Archiv {p.get('name','?')} ({sid}): {e}")
-
-        if sid and tids:
-            team_candidates.setdefault(sid,set()).update(tids)
-
-    # 2) Teamseiten als zusätzliche Quelle für weiterhin fehlende Cartoons.
-    all_team_ids=sorted({tid for tids in team_candidates.values() for tid in tids if tid})
-    cartoon_by_id={}
-    for tid in all_team_ids:
-        try:
-            html=get(f"https://www.thesportsdb.com/team/{tid}?view=7#playerImages").text
-            soup=BeautifulSoup(html,"html.parser")
-            for a in soup.select('a[href*="/player/"]'):
-                m=re.search(r"/player/(\d+)",a.get("href",""))
-                img=a.find("img")
-                if not m or not img:
-                    continue
-                src=img.get("src") or img.get("data-src") or img.get("data-original") or ""
-                if "/images/media/player/cartoon/" in src:
-                    if src.startswith("//"):
-                        src="https:"+src
-                    elif src.startswith("/"):
-                        src="https://www.thesportsdb.com"+src
-                    cartoon_by_id[m.group(1)]=src
-            time.sleep(.8)
-        except Exception as e:
-            print(f"Cartoon-Team {tid}: {e}")
-
-    team_added=0
-    for p in rows:
-        if p.get("cartoon"):
-            continue
-        sid=str(p.get("sportsdbId") or "")
-        if sid in cartoon_by_id:
-            p["cartoon"]=cartoon_by_id[sid]
-            team_added+=1
-
-    after=sum(1 for p in rows if p.get("cartoon"))
-    missing_rows=[p for p in rows if not p.get("cartoon")]
+    after=sum(1 for p in rows if p.get("photo"))
+    missing_rows=[p for p in rows if not p.get("photo")]
     missing_with_id=[p for p in missing_rows if p.get("sportsdbId")]
     missing_without_id=[p for p in missing_rows if not p.get("sportsdbId")]
 
     print("\n" + "="*62)
-    print("THESPORTSDB / CARTOON-AUSWERTUNG")
+    print("THESPORTSDB / ECHTE SPIELERBILDER")
     print("="*62)
     print(f"Spieler insgesamt:                         {len(rows)}")
-    print(f"Cartoons vorhanden:                       {after}")
-    print(f"Ohne Cartoon:                             {len(missing_rows)}")
+    print(f"Echte Bilder vorhanden:                   {after}")
+    print(f"Ohne echtes Bild:                         {len(missing_rows)}")
     print(f"  SportsDB-ID vorhanden, aber kein Bild:  {len(missing_with_id)}")
     print(f"  Kein SportsDB-Treffer / keine ID:       {len(missing_without_id)}")
-    print(f"Neu über Cartoon-Archiv gefunden:         {archive_added}")
-    print(f"Neu über Team-Seiten gefunden:            {team_added}")
+    print(f"Neu über strThumb gefunden:               {thumb_added}")
+    print(f"Neu über strCutout gefunden:              {cutout_added}")
     print(f"Verwendete Namensvarianten:               {alias_hits}")
     print(f"Verwendete feste SportsDB-ID-Zuordnungen: {id_override_hits}")
 
@@ -515,7 +449,7 @@ def sportsdb_enrich(rows):
             print(f" - {p.get('name','?')} | {p.get('club','?')} | OVR {p.get('rating','?')}")
 
     if missing_with_id:
-        print("\nSPORTSDB-ID VORHANDEN, ABER KEIN CARTOON (erste 40):")
+        print("\nSPORTSDB-ID VORHANDEN, ABER KEIN ECHTES BILD (erste 40):")
         for p in sorted(missing_with_id, key=lambda x: (-(int(x.get("rating") or 0)), norm(x.get("name"))))[:40]:
             print(f" - {p.get('name','?')} | {p.get('club','?')} | ID {p.get('sportsdbId')} | OVR {p.get('rating','?')}")
     print("="*62)
@@ -566,7 +500,7 @@ def main():
                     rec=dict(old)
                     # EA-Werte dürfen aktualisiert werden; bereits erfolgreich
                     # gefundene TheSportsDB-Zuordnungen bleiben aber erhalten.
-                    known_sportsdb={k:old.get(k) for k in ("sportsdbId","sportsdbTeamId","cartoon") if old.get(k)}
+                    known_sportsdb={k:old.get(k) for k in ("sportsdbId","sportsdbTeamId","photo") if old.get(k)}
                     rec.update(p)
                     for k,v in known_sportsdb.items():
                         if not rec.get(k):
@@ -630,10 +564,10 @@ def main():
         order=["bundesliga","champions","europa","restderwelt"]
         p["competitions"]=sorted(set(p.get("competitions",[])),key=lambda x:order.index(x) if x in order else 99)
 
-    # Reuse existing cartoon / SportsDB data wherever possible.
+    # Reuse existing real photo / SportsDB data wherever possible.
     for p in rows:
         old=old_by_ea.get(str(p.get("eaId"))) or old_by_name.get(norm(p.get("name"))) or {}
-        for k in ("sportsdbId","sportsdbTeamId","cartoon"):
+        for k in ("sportsdbId","sportsdbTeamId","photo"):
             if old.get(k) and not p.get(k): p[k]=old[k]
 
     # V7.2: Feste TheSportsDB-IDs nochmals unmittelbar vor dem Enrichment
@@ -648,6 +582,10 @@ def main():
             p["sportsdbId"] = str(fixed_sid)
 
     sportsdb_enrich(rows)
+    # Alte Cartoon-Felder vollständig entfernen.
+    for p in rows:
+        p.pop("cartoon", None)
+
 
     # Sicherheitsprüfung: Ein fester Override darf nach dem Enrichment niemals
     # fehlen oder durch einen anderen Treffer ersetzt worden sein.
@@ -673,7 +611,7 @@ def main():
     # consistent field order
     field_order=["id","name","search","club","competitions","manual","eaId","eaUrl","pos","rating","rarity",
                  "tempo","schuss","passen","dribbling","defensive","physis","theme","emoji","color",
-                 "sportsdbId","sportsdbTeamId","cartoon"]
+                 "sportsdbId","sportsdbTeamId","photo"]
     clean=[]
     for p in rows:
         clean.append({k:p[k] for k in field_order if k in p and p[k] not in (None,"")})

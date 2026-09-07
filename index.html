@@ -629,7 +629,7 @@ body.meme67-shake .ipad-tip{
 <footer class="source-note">
   Echte Spielerbilder:
   <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer">TheSportsDB</a><br>
-  © Bild-/Artwork-Rechte bei den jeweiligen Rechteinhabern. TheSportsDB wird als Bildquelle genannt.
+  © Bildrechte bei den jeweiligen Rechteinhabern. TheSportsDB wird als Bildquelle genannt.
 </footer>
 
 
@@ -985,10 +985,15 @@ $('form').addEventListener('submit',e=>{
 });
 
 async function info(p){
-  // Ausschließlich echte TheSportsDB-Spielerbilder verwenden.
-  // Cartoon-Artwork aus players.json wird bewusst ignoriert.
-  // Neue Cache-Version verhindert, dass frühere Cartoon-/Ersatzbilder weiter erscheinen.
-  const key='fm_info_realphoto_cutout_v1_'+p.id;
+  // Der Updater speichert das echte TheSportsDB-Spielerbild bereits in players.json.
+  // Reihenfolge dort: strThumb -> strCutout. Cartoons werden nicht verwendet.
+  if(typeof p.photo==='string' && p.photo.trim()){
+    return {photo:p.photo.trim(),team:p.club||''};
+  }
+
+  // Fallback für ältere players.json oder falls beim Update noch kein photo-Feld
+  // vorhanden war: direkt über die offizielle TheSportsDB-Spielersuche nachladen.
+  const key='fm_info_realphoto_json_v1_'+p.id;
   const cached=localStorage.getItem(key);
   if(cached){
     try{return JSON.parse(cached)}catch(e){}
@@ -1000,9 +1005,8 @@ async function info(p){
     const sid=String(p.sportsdbId||'');
     const x=(sid && candidates.find(v=>String(v.idPlayer||'')===sid)) || candidates[0];
 
-    // Echtes TheSportsDB-Spielerbild: strThumb hat Vorrang.
-    // Falls kein strThumb vorhanden ist, wird strCutout als Alternative verwendet.
-    // p.cartoon wird weiterhin bewusst ignoriert.
+    // Ausschließlich echte TheSportsDB-Bilder:
+    // strThumb zuerst, strCutout als Alternative. Kein Cartoon.
     const v={
       photo:x?(x.strThumb||x.strCutout||''):'',
       team:x?(x.strTeam||p.club||''):(p.club||'')
